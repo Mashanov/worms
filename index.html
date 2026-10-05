@@ -7,6 +7,17 @@
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
 <script>vkBridge.send("VKWebAppInit");</script>
 <style>
+#adOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;z-index:9999;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Arial,sans-serif;}
+#adOverlay .ad-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top:4px solid #fff;border-radius:50%;animation:adspin 1s linear infinite;margin-bottom:20px;}
+@keyframes adspin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+#adOverlay .ad-text{font-size:18px;}
+</style>
+<div id="adOverlay"><div class="ad-spinner"></div><div class="ad-text">Реклама загружается...</div></div>
+<script>
+function _showAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='flex';}}
+function _hideAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='none';}}
+</script>
+<style>
   body { margin:0; overflow:hidden; background:#87ceeb; font-family:Arial,sans-serif; }
   canvas { display:block; }
   #teamHP { position:fixed; top:10px; left:10px; z-index:1; display:flex; flex-direction:column; gap:6px; }
@@ -210,9 +221,7 @@
     <button class="lobby-btn btn-shop" onclick="openShop()"><span class="bico">🛒</span><span id="btnShop">Магазин</span></button>
     <button class="lobby-btn btn-inv" onclick="openInventory()"><span class="bico">🎒</span><span id="btnInv">Инвентарь</span></button>
     <button class="lobby-btn btn-settings" onclick="openSettings()"><span class="bico">⚙️</span><span id="btnSettings">Настройки</span></button>
-    <button class="lobby-btn btn-friends" onclick="inviteFriends()"><span class="bico">👥</span><span id="btnFriends">Пригласить друзей</span></button>
-    <button class="lobby-btn btn-community" onclick="goCommunity()"><span class="bico">🌐</span><span id="btnCommunity">Сообщество</span></button>
-    <button class="lobby-btn btn-leader" onclick="showLeaderboard()"><span class="bico">🏆</span><span id="btnLeader">Таблица лидеров</span></button>
+    <button class="lobby-btn btn-friends" onclick="vkBridge.send('VKWebAppShowInviteBox')"><span class="bico">👥</span><span id="btnFriends">Пригласить друзей</span></button>
   </div>
 </div>
 
@@ -1013,11 +1022,27 @@ function loadPlayer() {
       });
     }
   } catch(e) {}
+  // Загрузка из VK Storage (асинхронно, применит данные после загрузки)
+  try {
+    vkBridge.send('VKWebAppStorageGet', {keys: ['game']}).then(function(data) {
+      if (data.keys && data.keys[0] && data.keys[0].value) {
+        var savedVK = JSON.parse(data.keys[0].value);
+        player = Object.assign({}, DEFAULT_PLAYER, savedVK, {
+          characters: savedVK.characters || DEFAULT_PLAYER.characters
+        });
+        savePlayer(); // синхронизируем с localStorage
+      }
+    });
+  } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_PLAYER));
 }
 
 function savePlayer() {
   try { localStorage.setItem('chervi2d_player', JSON.stringify(player)); } catch(e) {}
+  // Сохранение в VK Storage
+  try {
+    vkBridge.send('VKWebAppStorageSet', {key: 'game', value: JSON.stringify(player)});
+  } catch(e) {}
 }
 
 function regenEnergy() {
@@ -1192,7 +1217,7 @@ function hideLobby() {
 function openMenu(id) { document.getElementById(id).classList.add('active'); }
 function closeMenu(id) { document.getElementById(id).classList.remove('active'); }
 
-function openPlayMenu() {
+function _openPlayMenuActual() {
   regenEnergy();
   const info = document.getElementById('playEnergyInfo');
   if (player.energy <= 0) {
@@ -1203,6 +1228,18 @@ function openPlayMenu() {
     info.style.color = '#ffd700';
   }
   openMenu('playMenu');
+}
+
+function openPlayMenu() {
+  // Показ рекламы перед входом в игру
+  _showAdOverlay();
+  vkBridge.send('VKWebAppShowNativeAds', {ad_format:'interstitial'}).then(function(data) {
+    _hideAdOverlay();
+    _openPlayMenuActual();
+  }).catch(function(err) {
+    _hideAdOverlay();
+    _openPlayMenuActual();
+  });
 }
 
 function openShop() {
@@ -1382,7 +1419,6 @@ function redeemPromo() {
     });
   })();
 
-function inviteFriends() { showLobbyMsg(t('friendsMsg')); }
 function goCommunity() { showLobbyMsg(t('communityMsg')); }
 function showLeaderboard() { showLobbyMsg(t('leaderboardMsg')); }
 
@@ -1430,7 +1466,7 @@ function showBossInfo(bossId){
 }
 
 
-function startBattle(difficulty) {
+function _startBattleActual(difficulty) {
   regenEnergy();
   if (player.energy <= 0) {
     showLobbyMsg(t('noEnergy'));
@@ -1448,6 +1484,7 @@ function startBattle(difficulty) {
     currentBoss = null;
     currentMap = {easy:0,medium:1,hard:2}[difficulty] || 0;
   }
+
   // Initialize boss state
   bossCooldowns = {};
   bossPhase = 0;
@@ -1458,6 +1495,18 @@ function startBattle(difficulty) {
   closeMenu('playMenu');
   hideLobby();
   startGame();
+}
+
+function startBattle(difficulty) {
+  // Показ рекламы перед заходом на уровень
+  _showAdOverlay();
+  vkBridge.send('VKWebAppShowNativeAds', {ad_format:'interstitial'}).then(function(data) {
+    _hideAdOverlay();
+    _startBattleActual(difficulty);
+  }).catch(function(err) {
+    _hideAdOverlay();
+    _startBattleActual(difficulty);
+  });
 }
 
 
