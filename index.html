@@ -5,7 +5,7 @@
 <title>Сопротивление кругляшей</title>
 <script src="https://vk.com/js/api/xd_connection.js?2"></script>
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-<script>vkBridge.send("VKWebAppInit");</script>
+<script>vkBridge.send("VKWebAppInit");vkBridge.send('VKWebAppGetLaunchParams').then((data) => { vkBridge.send('VKWebAppShowBannerAd');}).catch((error) => {});</script>
 <style>
 #adOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;z-index:9999;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Arial,sans-serif;}
 #adOverlay .ad-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top:4px solid #fff;border-radius:50%;animation:adspin 1s linear infinite;margin-bottom:20px;}
