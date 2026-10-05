@@ -1518,8 +1518,7 @@ function onGameEnd(winnerTeam) {
   if(tutorialMode){endTutorial();return;}
   const isWin = (winnerTeam === 0); // player is team 0
   if (isWin) {
-  const reward = DIFF_REWARDS[gameMode] || (BOSS_TYPES[gameMode] ? BOSS_TYPES[gameMode].reward : 50);
-    player.money += reward;
+    const reward = DIFF_REWARDS[gameMode] || (BOSS_TYPES[gameMode] ? BOSS_TYPES[gameMode].reward : 50);
     player.wins++;
     player.level = Math.floor(player.wins / 3) + 1;
     player.maxEnergy = 5 + Math.floor(player.level / 5);
@@ -1537,12 +1536,45 @@ function showResultScreen(win, reward) {
   let html = '<div style="background:#1e2a3a;border-radius:16px;padding:40px;text-align:center;max-width:400px;">';
   html += '<div style="font-size:48px;margin-bottom:16px;">' + (win ? '🎉' : '😞') + '</div>';
   html += '<h2 style="color:' + (win ? '#0f9b8e' : '#e94560') + ';font-size:28px;margin-bottom:12px;">' + (win ? t('win') : t('lose')) + '</h2>';
-  if (win) html += '<p style="color:#ffd700;font-size:22px;font-weight:bold;margin-bottom:20px;">+' + reward + ' 💰</p>';
-  else html += '<p style="color:#888;font-size:16px;margin-bottom:20px;">' + t('noReward') + '</p>';
-  html += '<button onclick="returnToLobby()" style="padding:12px 32px;border:none;border-radius:10px;background:#e94560;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;">' + t('toLobby') + '</button>';
+  if (win) {
+    html += '<p id="rewardText" style="color:#ffd700;font-size:22px;font-weight:bold;margin-bottom:12px;">+' + reward + ' 💰</p>';
+    html += '<button id="doubleBtn" onclick="doubleReward(' + reward + ')" style="padding:12px 24px;border:none;border-radius:10px;background:linear-gradient(135deg,#0f9b8e,#0a7d6f);color:#fff;font-size:16px;font-weight:bold;cursor:pointer;margin-bottom:12px;width:100%;">📺 Удвоить награду (+' + reward + '💰)</button>';
+  } else {
+    html += '<p style="color:#888;font-size:16px;margin-bottom:20px;">' + t('noReward') + '</p>';
+  }
+  html += '<button onclick="claimReward(' + reward + ',' + (win ? 'true' : 'false') + ')" style="padding:12px 32px;border:none;border-radius:10px;background:#e94560;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;width:100%;">' + (win ? 'Забрать ' + reward + '💰' : t('toLobby')) + '</button>';
   html += '</div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
+}
+
+function doubleReward(baseReward) {
+  var btn = document.getElementById('doubleBtn');
+  if(btn) { btn.disabled = true; btn.textContent = 'Загрузка рекламы...'; }
+  vkBridge.send('VKWebAppShowNativeAds', {ad_format:'reward'}).then(function(data) {
+    if(data && data.result) {
+      player.money += baseReward * 2;
+      savePlayer();
+      var rt = document.getElementById('rewardText');
+      if(rt) rt.innerHTML = '+' + (baseReward * 2) + ' 💰 ✨';
+      if(btn) { btn.style.display = 'none'; btn.textContent = '✓ Удвоено!'; }
+      var claimBtn = overlay_claimBtn;
+      var cb = document.querySelector('#resultOverlay button[onclick^="claimReward"]');
+      if(cb) cb.textContent = 'Забрать ' + (baseReward * 2) + '💰';
+    } else {
+      if(btn) { btn.disabled = false; btn.textContent = '📺 Удвоить награду (+' + baseReward + '💰)'; }
+    }
+  }).catch(function(err) {
+    if(btn) { btn.disabled = false; btn.textContent = '📺 Удвоить награду (+' + baseReward + '💰)'; }
+  });
+}
+
+function claimReward(reward, isWin) {
+  if(isWin) {
+    player.money += reward;
+    savePlayer();
+  }
+  returnToLobby();
 }
 
 function returnToLobby() {
