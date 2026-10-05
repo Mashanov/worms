@@ -387,7 +387,7 @@ try {
         volume: 0.2,
         loop: true,
         onload: function (){
-            if (player.music && !document.hidden) audio.play();
+            if (player.music && !document.hidden && !audio.playing()) audio.play();
         }
     });
 } catch(e) {
@@ -402,7 +402,7 @@ self.onblur = function() {
 
 self.onfocus = function() {
     if (audio && player.music) {
-      audio.play();
+       if(!audio.playing()) audio.play();
     }
 };
 </script>
@@ -1401,7 +1401,7 @@ function redeemPromo() {
     if(mt)mt.addEventListener('change',function(){
         player.music=this.checked;savePlayer();
         if(audio){
-            if(player.music && !document.hidden) audio.play();
+            if(player.music && !document.hidden && !audio.playing()) audio.play();
             else audio.pause();
         }
     });
@@ -3153,7 +3153,7 @@ let startGamePending=false;
 function startGame(){gameActive=true;
   if(!tutorialMode){document.getElementById('tutorialBar').style.display='none';document.getElementById('tutorialSkip').style.display='none';}
   effects=[];projectiles=[];mines=[];dynamites=[];shake=0;
-  state='player';turnTeam=0;nextIdx=[0,0];activeWorm=null;charging=false;jetpackActive=false;
+  state='loading';turnTeam=0;nextIdx=[0,0];activeWorm=null;charging=false;jetpackActive=false;worms=[];
   paused=false;pauseEl.style.display='none';powerWrapEl.style.display='none';
   invOpen=false;invOverlay.style.display='none';camManual=false;camX=0;camY=(TERRAIN_TOP+WORLD.bottom)/2;
   minesLeft=4;teleportsLeft=1;potionsLeft=2;damageEndTurn=false;
@@ -3163,7 +3163,7 @@ function startGame(){gameActive=true;
   generateMap(currentMap);
   if(terrainReady){finishStartGame();}}
 function finishStartGame(){
-  startGamePending=false;
+  if(!startGamePending)return;startGamePending=false;
   createWorms();
   if(player&&player.characters){
     for(let i=0;i<worms.length&&i<player.characters.length;i++){
