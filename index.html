@@ -1012,7 +1012,13 @@ const DEFAULT_PLAYER = {
 const ENERGY_REGEN_MS = 30 * 60 * 1000; // 30 minutes
 
 function loadPlayer() {
-  // Загрузка из VK Storage (асинхронно, применит данные после загрузки)
+  // 1) Сначала пытаемся загрузить синхронно из localStorage
+  var loaded = null;
+  try {
+    var saved = localStorage.getItem('chervi2d_player');
+    if (saved) loaded = JSON.parse(saved);
+  } catch(e) {}
+  // 2) Асинхронно грузим из VK Storage — перезапишет, если там свежее
   try {
     vkBridge.send('VKWebAppStorageGet', {keys: ['game']}).then(function(data) {
       if (data.keys && data.keys[0] && data.keys[0].value) {
@@ -1022,8 +1028,24 @@ function loadPlayer() {
         });
         savePlayer(); // синхронизируем с localStorage
       }
+      // Данные из VK загружены — теперь можно показывать обучение (или не показывать)
+      vkDataReady = true;
+      if (!player.tutorialSeen) {
+        showTutorialPrompt();
+      }
+    }).catch(function() {
+      vkDataReady = true;
+      if (!player.tutorialSeen) {
+        showTutorialPrompt();
+      }
     });
   } catch(e) {}
+  // Возвращаем данные из localStorage (где tutorialSeen уже корректен) или DEFAULT
+  if (loaded) {
+    return Object.assign({}, DEFAULT_PLAYER, loaded, {
+      characters: loaded.characters || DEFAULT_PLAYER.characters
+    });
+  }
   return JSON.parse(JSON.stringify(DEFAULT_PLAYER));
 }
 
