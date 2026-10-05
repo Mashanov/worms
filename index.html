@@ -217,7 +217,7 @@ function _hideAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.sty
   </div>
   <div id="energyTimer"></div>
   <div id="lobbyGrid">
-    <button class="lobby-btn btn-play" onclick="openPlayMenu()"><span class="bico">🎮</span><span id="btnPlay">Играть</span></button>
+    <button class="lobby-btn btn-play" onclick="_openPlayMenuActual()"><span class="bico">🎮</span><span id="btnPlay">Играть</span></button>
     <button class="lobby-btn btn-shop" onclick="openShop()"><span class="bico">🛒</span><span id="btnShop">Магазин</span></button>
     <button class="lobby-btn btn-inv" onclick="openInventory()"><span class="bico">🎒</span><span id="btnInv">Инвентарь</span></button>
     <button class="lobby-btn btn-settings" onclick="openSettings()"><span class="bico">⚙️</span><span id="btnSettings">Настройки</span></button>
@@ -1228,18 +1228,6 @@ function _openPlayMenuActual() {
     info.style.color = '#ffd700';
   }
   openMenu('playMenu');
-}
-
-function openPlayMenu() {
-  // Показ рекламы перед входом в игру
-  _showAdOverlay();
-  vkBridge.send('VKWebAppShowNativeAds', {ad_format:'interstitial'}).then(function(data) {
-    _hideAdOverlay();
-    _openPlayMenuActual();
-  }).catch(function(err) {
-    _hideAdOverlay();
-    _openPlayMenuActual();
-  });
 }
 
 function openShop() {
