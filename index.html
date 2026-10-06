@@ -14,8 +14,8 @@
 </style>
 <div id="adOverlay"><div class="ad-spinner"></div><div class="ad-text">Реклама загружается...</div></div>
 <script>
-function _showAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='flex';}}
-function _hideAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='none';}}
+function _showAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='flex';}if(audio&&audio.playing())audio.pause();}
+function _hideAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='none';}if(audio&&player.music&&!document.hidden&&!audio.playing())audio.play();}
 </script>
 <style>
   body { margin:0; overflow:hidden; background:#87ceeb; font-family:Arial,sans-serif; }
@@ -1563,6 +1563,7 @@ function showResultScreen(win, reward) {
 function doubleReward(baseReward) {
   var btn = document.getElementById('doubleBtn');
   if(btn) { btn.disabled = true; btn.textContent = 'Загрузка рекламы...'; }
+  if(audio&&audio.playing())audio.pause();
   vkBridge.send('VKWebAppShowNativeAds', {ad_format:'reward'}).then(function(data) {
     if(data && data.result) {
       player.money += baseReward * 2;
@@ -1579,6 +1580,7 @@ function doubleReward(baseReward) {
   }).catch(function(err) {
     if(btn) { btn.disabled = false; btn.textContent = '📺 Удвоить награду (+' + baseReward + '💰)'; }
   });
+  if(audio&&player.music&&!document.hidden&&!audio.playing())audio.play();
 }
 
 function claimReward(reward, isWin) {
